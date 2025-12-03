@@ -93,8 +93,8 @@ void canSendTask(void) {
 	txHeader.IDE = CAN_ID_STD;
 	txHeader.DLC = 2;
 	txData[0] = 0xC3;
-	//txData[1] = var;
-	int txMailbox;
+	txData[1] = 10;
+	uint32_t txMailbox;
 
 
 
