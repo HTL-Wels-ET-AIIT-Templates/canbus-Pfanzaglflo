@@ -21,10 +21,12 @@
 /* Private define ------------------------------------------------------------*/
 
 // ToDo: korrekte Prescaler-Einstellung
-#define   CAN1_CLOCK_PRESCALER    1000
+#define   CAN1_CLOCK_PRESCALER    12
 
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef     canHandle;
+
+
 
 /* Private function prototypes -----------------------------------------------*/
 static void initGpio(void);
@@ -82,6 +84,18 @@ void canSendTask(void) {
 	// ToDo declare the required variables
 	static unsigned int sendCnt = 0;
 
+	CAN_TxHeaderTypeDef txHeader;
+	uint8_t txData[8]; // array for tx data
+
+	txHeader.StdId = 0x1AB;
+	txHeader.ExtId = 0x00;
+	txHeader.RTR = CAN_RTR_DATA;
+	txHeader.IDE = CAN_ID_STD;
+	txHeader.DLC = 2;
+	txData[0] = 0xC3;
+	//txData[1] = var;
+	int txMailbox;
+
 
 
 	// ToDo (2): get temperature value
@@ -90,9 +104,22 @@ void canSendTask(void) {
 
 	// ToDo prepare send data
 
+	// ========= send
+	// check if mailboxes are empty (last transmission was successful)
+	if (HAL_CAN_GetTxMailboxesFreeLevel(&canHandle) != 3 ) {
+		// mail box not empty
+	}
+
+
+
 
 
 	// ToDo send CAN frame
+	// send frame: frame will be copied int send mail box
+	if (HAL_CAN_AddTxMessage(&canHandle, &txHeader, txData, &txMailbox) != HAL_OK){
+		// send failed
+	}
+
 
 
 
@@ -110,15 +137,26 @@ void canSendTask(void) {
 void canReceiveTask(void) {
 	static unsigned int recvCnt = 0;
 
+	CAN_RxHeaderTypeDef rxHeader;
+	uint8_t rxData[8]; // array for rx data
+
 
 
 	// ToDo: check if CAN frame has been received
 
-
+	// ========= receive
+	// check if frame has been received
+	if (HAL_CAN_GetRxFifoFillLevel(&canHandle, CAN_RX_FIFO0) == 0) {
+		// no frame received
+	}
 
 
 	// ToDo: Get CAN frame from RX fifo
-
+	// get frame from receive FIFO
+	if (HAL_CAN_GetRxMessage(&canHandle, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK){
+		// error
+	}
+	// rxHeader and rxData contain data of received frame -> process it
 
 
 	// ToDo: Process received CAN Frame (extract data)
@@ -176,8 +214,8 @@ static void initCanPeripheral(void) {
 	canHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
 
 	// CAN Baudrate
-	canHandle.Init.TimeSeg1 = CAN_BS1_15TQ;
-	canHandle.Init.TimeSeg2 = CAN_BS2_6TQ;
+	canHandle.Init.TimeSeg1 = CAN_BS1_11TQ;
+	canHandle.Init.TimeSeg2 = CAN_BS2_4TQ;
 	canHandle.Init.Prescaler = CAN1_CLOCK_PRESCALER;
 
 	if (HAL_CAN_Init(&canHandle) != HAL_OK)
@@ -226,12 +264,12 @@ static void initCanPeripheral(void) {
 	}
 
 	/*##-4- Activate CAN RX notification #######################################*/
-//	HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-//	if (HAL_CAN_ActivateNotification(&canHandle, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-//	{
-//		/* Notification Error */
-//		Error_Handler();
-//	}
+	//	HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+	//	if (HAL_CAN_ActivateNotification(&canHandle, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+	//	{
+	//		/* Notification Error */
+	//		Error_Handler();
+	//	}
 
 }
 
