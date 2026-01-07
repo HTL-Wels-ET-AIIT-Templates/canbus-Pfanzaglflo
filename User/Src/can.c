@@ -39,6 +39,7 @@ static void initCanPeripheral(void);
 void canInitHardware(void) {
 	initGpio();
 	initCanPeripheral();
+
 }
 
 /**
@@ -84,6 +85,7 @@ void canSendTask(void) {
 	// ToDo declare the required variables
 	static unsigned int sendCnt = 0;
 
+
 	CAN_TxHeaderTypeDef txHeader;
 	uint8_t txData[8]; // array for tx data
 
@@ -91,9 +93,11 @@ void canSendTask(void) {
 	txHeader.ExtId = 0x00;
 	txHeader.RTR = CAN_RTR_DATA;
 	txHeader.IDE = CAN_ID_STD;
-	txHeader.DLC = 2;
-	txData[0] = 0xC3;
-	txData[1] = 10;
+	txHeader.DLC = 4;
+	txData[0] = 0xAF;
+	txData[1] = sendCnt;   // Zweites Byte (dein Zähler)
+    txData[2] = 0x00;      // Drittes Byte (Reserve)
+    txData[3] = 0x00;      // Viertes Byte (Reserve)
 	uint32_t txMailbox;
 
 
@@ -105,9 +109,11 @@ void canSendTask(void) {
 	// ToDo prepare send data
 
 	// ========= send
+
 	// check if mailboxes are empty (last transmission was successful)
 	if (HAL_CAN_GetTxMailboxesFreeLevel(&canHandle) != 3 ) {
 		// mail box not empty
+		return;
 	}
 
 
@@ -116,17 +122,22 @@ void canSendTask(void) {
 
 	// ToDo send CAN frame
 	// send frame: frame will be copied int send mail box
-	if (HAL_CAN_AddTxMessage(&canHandle, &txHeader, txData, &txMailbox) != HAL_OK){
-		// send failed
+	if (HAL_CAN_AddTxMessage(&canHandle, &txHeader, txData, &txMailbox) == HAL_OK){
+		sendCnt++;
+
+
+
+
+
+		// ToDo display send counter and send data
+		LCD_SetPrintPosition(5, 15);
+		printf("%5d", sendCnt);
+
+		LCD_SetPrintPosition(11, 1);
+		printf("%03lx %02x %02x %02x %02x",
+				txHeader.StdId, txData[0], txData[1], txData[2], txData[3]);
+
 	}
-
-
-
-
-	// ToDo display send counter and send data
-
-
-
 }
 
 /**
@@ -138,6 +149,7 @@ void canReceiveTask(void) {
 	static unsigned int recvCnt = 0;
 
 	CAN_RxHeaderTypeDef rxHeader;
+
 	uint8_t rxData[8]; // array for rx data
 
 
@@ -148,26 +160,36 @@ void canReceiveTask(void) {
 	// check if frame has been received
 	if (HAL_CAN_GetRxFifoFillLevel(&canHandle, CAN_RX_FIFO0) == 0) {
 		// no frame received
+		return;
 	}
 
 
 	// ToDo: Get CAN frame from RX fifo
 	// get frame from receive FIFO
 	if (HAL_CAN_GetRxMessage(&canHandle, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK){
-		// error
+
 	}
 	// rxHeader and rxData contain data of received frame -> process it
 
 
 	// ToDo: Process received CAN Frame (extract data)
-
+	recvCnt++;
 
 
 	// ToDo display recv counter and recv data
 
+	LCD_SetColors(LCD_COLOR_GREEN, LCD_COLOR_BLACK);
+	LCD_SetPrintPosition(7, 15);
+	printf("%5d", recvCnt);
 
 
+	LCD_SetPrintPosition(17, 1);
+
+	printf("ID:%03lx Data:%02x %02x %02x",
+			rxHeader.StdId, rxData[0], rxData[1], rxData[2]);
 }
+
+
 
 /**
  * Initialize GPIOs for CAN

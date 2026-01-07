@@ -76,11 +76,11 @@ int main(void)
 
 	LCD_SetFont(&Font8);
 	LCD_SetColors(LCD_COLOR_MAGENTA, LCD_COLOR_BLACK); // TextColor, BackColor
-	LCD_DisplayStringAtLineMode(39, "copyright CAN Experts!", CENTER_MODE);
+	LCD_DisplayStringAtLineMode(39, "copyright Pfanzagl!", CENTER_MODE);
 
 	// ToDo: set up CAN peripherals
 
-
+	canInit();
 
 	/* Infinite loop */
 	while (1)
@@ -89,11 +89,15 @@ int main(void)
 		HAL_Delay(10);
 
 		// ToDo: send data over CAN when user button has been pressed
+		if (GetUserButtonPressed()) {
+			canSendTask();
+			HAL_Delay(200);
 
+		}
 
 
 		// ToDo: check if data has been received
-
+		canReceiveTask();
 
 		// display timer
 		int cnt = HAL_GetTick();
